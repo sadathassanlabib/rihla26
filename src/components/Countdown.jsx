@@ -1,16 +1,19 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
 
-const TARGET = new Date("2026-12-24T16:00:00+06:00").getTime();
-
-export default function Countdown() {
+export default function Countdown({
+  target,
+  title = "The journey begins in",
+  finishedTitle = "The journey has begun",
+  subtitle,
+}) {
   const [time, setTime] = useState(null);
+  const targetMs = new Date(target).getTime();
 
   useEffect(() => {
     const update = () => {
-      const distance = Math.max(0, TARGET - Date.now());
+      const distance = Math.max(0, targetMs - Date.now());
 
       setTime({
         days: Math.floor(distance / (1000 * 60 * 60 * 24)),
@@ -25,7 +28,7 @@ export default function Countdown() {
     const interval = setInterval(update, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [targetMs]);
 
   const units = [
     { label: "DAYS", value: time?.days },
@@ -41,7 +44,7 @@ export default function Countdown() {
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-300 opacity-75" />
           <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-sky-300" />
         </span>
-        {time?.finished ? "The journey has begun" : "The journey begins in"}
+        {time?.finished ? finishedTitle : title}
       </div>
 
       <div className="grid grid-cols-4 gap-2 sm:gap-4">
@@ -60,9 +63,9 @@ export default function Countdown() {
         ))}
       </div>
 
-      <p className="mt-4 text-center text-xs text-sky-100/80">
-        24 December 2026 · 4:00 PM · Bangladesh Time
-      </p>
+      {subtitle && (
+        <p className="mt-4 text-center text-xs text-sky-100/80">{subtitle}</p>
+      )}
     </div>
   );
 }
