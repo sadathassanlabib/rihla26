@@ -3,30 +3,55 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
 
 export default function FloatingRegisterButton() {
   const [visible, setVisible] = useState(false);
-  const pathname = usePathname();
 
   useEffect(() => {
-    const hero = document.getElementById("home-hero");
+    let currentHero = null;
 
-    if (!hero) {
-      setVisible(false);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => setVisible(!entry.isIntersecting),
+    const intersectionObserver = new IntersectionObserver(
+      ([entry]) => {
+        setVisible(!entry.isIntersecting);
+      },
       { threshold: 0 }
     );
 
-    observer.observe(hero);
+    const syncHero = () => {
+      const hero = document.getElementById("home-hero");
 
-    return () => observer.disconnect();
-  }, [pathname]);
+      if (hero === currentHero) return;
+
+      if (currentHero) {
+        intersectionObserver.unobserve(currentHero);
+      }
+
+      currentHero = hero;
+
+      if (currentHero) {
+        intersectionObserver.observe(currentHero);
+      } else {
+        setVisible(false);
+      }
+    };
+
+    // Initial check
+    syncHero();
+
+    // Detect client-side route changes and DOM updates
+    const mutationObserver = new MutationObserver(syncHero);
+
+    mutationObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    return () => {
+      mutationObserver.disconnect();
+      intersectionObserver.disconnect();
+    };
+  }, []);
 
   if (!visible) return null;
 
@@ -57,11 +82,23 @@ export default function FloatingRegisterButton() {
 
       <ArrowUpRight
         size={15}
-        className="text-[#E07A3E] transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-white"
+        className="
+          text-[#E07A3E]
+          transition-transform duration-300
+          group-hover:translate-x-0.5
+          group-hover:-translate-y-0.5
+          group-hover:text-white
+        "
       />
 
-      {/* Hover Glow */}
-      <span className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-[#6BA39E]/10 to-[#E07A3E]/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      <span
+        className="
+          pointer-events-none absolute inset-0 -z-10
+          bg-gradient-to-r from-[#6BA39E]/10 to-[#E07A3E]/10
+          opacity-0 transition-opacity duration-300
+          group-hover:opacity-100
+        "
+      />
     </Link>
   );
 }
