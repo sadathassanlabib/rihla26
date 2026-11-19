@@ -1,17 +1,7 @@
 import Link from "next/link";
 import { Waves, MapPin, CalendarDays, ArrowUpRight, ArrowRight } from "lucide-react";
 
-/* Usage in your Home page:
 
-   import HomeHero from "@/components/home/HomeHero";
-
-   <HomeHero
-     title={s?.homeTitle}
-     body={s?.homeBody}
-     image={heroImage}
-   />
-
-   Every prop is optional. With no `image`, an animated sea scene is drawn. */
 
 const DEFAULT_TITLE = "Rihla'26";
 const DEFAULT_BODY =

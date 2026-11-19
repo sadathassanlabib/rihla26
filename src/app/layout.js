@@ -1,4 +1,7 @@
+
 import "./globals.css";
+import { Suspense } from "react";
+
 import Providers from "@/components/Providers";
 import Navbar from "@/components/Navbar";
 import FloatingCall from "@/components/FloatingCall";
@@ -21,10 +24,13 @@ export default function RootLayout({ children }) {
           <Navbar />
 
           {children}
+
           <NatureSoundscape />
           <FloatingCall phone={phone} />
-          <FloatingRegisterButton />
-          
+
+          <Suspense fallback={null}>
+            <FloatingRegisterButton />
+          </Suspense>
 
           <Footer />
         </Providers>
