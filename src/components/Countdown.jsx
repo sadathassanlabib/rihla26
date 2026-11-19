@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -16,9 +17,9 @@ export default function Countdown({
       const distance = Math.max(0, targetMs - Date.now());
 
       setTime({
-        days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((distance / (1000 * 60 * 60)) % 24),
-        minutes: Math.floor((distance / (1000 * 60)) % 60),
+        days: Math.floor(distance / 86400000),
+        hours: Math.floor((distance / 3600000) % 24),
+        minutes: Math.floor((distance / 60000) % 60),
         seconds: Math.floor((distance / 1000) % 60),
         finished: distance === 0,
       });
@@ -39,33 +40,53 @@ export default function Countdown({
 
   return (
     <div className="w-full">
-      <div className="mb-4 flex items-center justify-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-sky-100">
-        <span className="relative flex h-2.5 w-2.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-300 opacity-75" />
-          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-sky-300" />
-        </span>
-        {time?.finished ? finishedTitle : title}
+      {/* Heading */}
+      <div className="mb-5 flex flex-col items-center gap-3">
+        <div className="flex items-center gap-2 rounded-full border border-[#6BA39E]/30 bg-[#246A73]/30 px-4 py-2 shadow-sm backdrop-blur-xl">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#E07A3E] opacity-60" />
+            <span className="relative h-2 w-2 rounded-full bg-[#E07A3E]" />
+          </span>
+
+          <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#DFC5A6] sm:text-xs">
+            {time?.finished ? finishedTitle : title}
+          </span>
+        </div>
+
+        {subtitle && (
+          <p className="text-center text-xs leading-relaxed text-[#DFC5A6]/80 sm:text-sm">
+            {subtitle}
+          </p>
+        )}
       </div>
 
+      {/* Countdown Cards */}
       <div className="grid grid-cols-4 gap-2 sm:gap-4">
         {units.map((unit) => (
           <div
             key={unit.label}
-            className="rounded-2xl border border-white/20 bg-white/10 px-2 py-4 text-center shadow-lg backdrop-blur-md sm:py-6"
+            className="group relative overflow-hidden rounded-2xl border border-[#6BA39E]/25 bg-[#1D423A]/65 px-1 py-4 text-center shadow-[0_8px_32px_rgba(0,0,0,0.18)] backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1 hover:border-[#E07A3E]/60 hover:bg-[#246A73]/70 sm:rounded-3xl sm:py-6"
           >
-            <div className="text-2xl font-black tabular-nums text-white sm:text-4xl md:text-5xl">
-              {time ? String(unit.value).padStart(2, "0") : "--"}
+            {/* Ambient Glow */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#6BA39E]/15 to-transparent opacity-70 transition-opacity group-hover:opacity-100" />
+
+            {/* Number */}
+            <div className="relative text-2xl font-black tabular-nums tracking-tight sm:text-4xl md:text-5xl">
+              <span className="bg-gradient-to-b from-[#DFC5A6] via-[#E9D7C1] to-[#6BA39E] bg-clip-text text-transparent">
+                {time ? String(unit.value).padStart(2, "0") : "--"}
+              </span>
             </div>
-            <div className="mt-2 text-[9px] font-bold tracking-[0.15em] text-sky-100 sm:text-xs">
+
+            {/* Divider */}
+            <div className="mx-auto my-3 h-px w-8 bg-gradient-to-r from-transparent via-[#E07A3E]/70 to-transparent sm:w-12" />
+
+            {/* Label */}
+            <div className="relative text-[8px] font-bold tracking-[0.16em] text-[#6BA39E] sm:text-[10px] sm:tracking-[0.22em]">
               {unit.label}
             </div>
           </div>
         ))}
       </div>
-
-      {subtitle && (
-        <p className="mt-4 text-center text-xs text-sky-100/80">{subtitle}</p>
-      )}
     </div>
   );
 }

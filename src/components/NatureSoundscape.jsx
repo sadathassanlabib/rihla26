@@ -39,7 +39,6 @@ export default function NatureSoundscape() {
   };
 
   useEffect(() => {
-    // Browser autoplay restrictions may prevent automatic playback.
     startSound();
 
     return () => {
@@ -72,17 +71,40 @@ export default function NatureSoundscape() {
         title={
           playing ? "Pause nature sounds" : "Play nature sounds"
         }
-        className="fixed bottom-[5.25rem] right-5 z-[101] flex h-12 w-12 items-center justify-center rounded-full border border-sky-300/20 bg-[#052E47]/95 text-sky-300 shadow-lg shadow-sky-950/30 backdrop-blur-xl transition-all duration-300 hover:scale-110 hover:border-sky-300/50 hover:bg-[#073D5B] active:scale-95"
+        className="
+          group fixed bottom-[5.25rem] right-5 z-[101]
+          flex h-12 w-12 items-center justify-center
+          rounded-full
+          border border-[#6BA39E]/40
+          bg-[#1D423A]/95
+          text-[#DFC5A6]
+          shadow-[0_8px_25px_rgba(29,66,58,0.35)]
+          backdrop-blur-xl
+          transition-all duration-300
+          hover:scale-110
+          hover:border-[#E07A3E]
+          hover:bg-[#246A73]
+          hover:text-white
+          active:scale-95
+        "
       >
         {playing ? (
-          <Waves className="h-5 w-5 animate-pulse" />
+          <Waves className="h-5 w-5 animate-pulse text-[#6BA39E]" />
         ) : (
-          <VolumeX className="h-5 w-5" />
+          <VolumeX className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />
         )}
 
+        {/* Active Sound Indicator */}
         {playing && (
-          <span className="pointer-events-none absolute inset-0 animate-ping rounded-full border border-sky-300/40" />
+          <>
+            <span className="pointer-events-none absolute inset-0 animate-ping rounded-full border border-[#6BA39E]/40" />
+
+            <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-[#1D423A] bg-[#E07A3E]" />
+          </>
         )}
+
+        {/* Ambient Glow */}
+        <span className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-[#6BA39E]/20 opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-100" />
       </button>
     </>
   );

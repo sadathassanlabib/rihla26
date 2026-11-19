@@ -15,15 +15,10 @@ import {
   ArrowLeft,
   Wallet,
   Banknote,
-  ReceiptText,
-  UserCheck,
   Lock,
   Eye,
   EyeOff,
   Package,
-  Bus,
-  Car,
-  Footprints,
   History,
   Share2,
 } from "lucide-react";
@@ -31,16 +26,16 @@ import {
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const TSHIRT_SIZES = ["S", "M", "L", "XL", "XXL"];
 
-const PACKAGES = {
-  roundtrip: { fee: 3500 },
-  oneway: { fee: 3000 },
-  destination: { fee: 2500 },
-};
+/* ── Fixed package ─────────────────────────────────────────── */
+const TRIP_FEE = 3500;
+const PACKAGE_TYPE = "roundtrip";
+
+/* ── Google-Form style primitives ────────────────────────────── */
 
 const inputClass =
-  "w-full px-3 py-2.5 border border-sky-100 rounded-lg text-sm text-slate-700 bg-white " +
-  "focus:outline-none focus:ring-2 focus:ring-sky-400/40 focus:border-sky-400 " +
-  "placeholder:text-slate-400 transition";
+  "w-full px-0 py-2 bg-transparent border-0 border-b border-slate-300 text-[15px] text-slate-800 " +
+  "focus:outline-none focus:border-[#E07A3E] focus:ring-0 transition-colors " +
+  "placeholder:text-slate-400";
 
 const initialForm = {
   fullName: "",
@@ -56,7 +51,6 @@ const initialForm = {
   emergencyPhone: "",
   password: "",
   confirmPassword: "",
-  packageType: "",
   paymentMode: "",
   paymentMethod: "",
   transactionId: "",
@@ -77,7 +71,7 @@ const t = {
   emergencyContact: "Emergency Contact",
   tshirtSize: "T-Shirt Size",
   security: "Account Security",
-  packageInfo: "Select a Package",
+  packageInfo: "Your Package",
   paymentInfo: "Payment Information",
   additionalInfo: "Additional Information (Optional)",
   fullName: "Full Name",
@@ -92,16 +86,16 @@ const t = {
   notes: "Anything you'd like us to know?",
   password: "Password",
   confirmPassword: "Confirm Password",
-  phFullName: "Your full name",
+  phFullName: "Your answer",
   phPhone: "01XXXXXXXXX",
-  phEmail: "you@example.com",
-  phAddress: "House / Road, Area, City",
-  phEmergencyName: "Family member's name",
-  phTransactionId: "e.g. 9F7A2B1C3D",
-  phNotes: "Dietary preferences, medical conditions, etc.",
-  phAmount: "Amount you paid",
-  phCashReceiver: "e.g. Sadat Hasan (Coordinator)",
-  phSlipId: "e.g. SLP-2026-014",
+  phEmail: "Your answer",
+  phAddress: "Your answer",
+  phEmergencyName: "Your answer",
+  phTransactionId: "Your answer",
+  phNotes: "Your answer",
+  phAmount: "Your answer",
+  phCashReceiver: "Your answer",
+  phSlipId: "Your answer",
   phPassword: "At least 6 characters",
   phConfirmPassword: "Re-enter your password",
   select: "Select",
@@ -109,7 +103,6 @@ const t = {
   female: "Female",
   other: "Other",
 
-  // Emergency relationship
   relation: "Relationship",
   relationFather: "Father",
   relationMother: "Mother",
@@ -120,27 +113,21 @@ const t = {
   relationFriend: "Friend",
   relationOther: "Other",
 
-  // Previous tour
   previousTourTitle: "Previous Tour Experience",
   previousTourLabel: "Have you joined a previous tour with us?",
   previousTourYes: "Yes, I have joined before",
   previousTourNo: "No, this is my first time",
 
-  // Reference
   referenceTitle: "How Did You Hear About Us?",
   referenceLabel: "Reference / Source",
   referenceHint: "e.g. Facebook, a friend's name, a coordinator, etc.",
-  phReference: "How did you find out about Rihla'26?",
+  phReference: "Your answer",
 
-  pkgRoundTrip: "Dhaka Round Trip",
-  pkgRoundTripDesc: "Go from Dhaka and return to Dhaka",
-  pkgOneWay: "Dhaka One-Way",
-  pkgOneWayDesc: "Go from Dhaka, return on your own",
-  pkgDestination: "Join at Destination",
-  pkgDestinationDesc: "Reach the destination yourself, no return",
-  pkgFee: "Package Fee",
+  packageName: "Dhaka Round Trip",
+  packageDesc: "Go from Dhaka and return to Dhaka",
+  packageFeeLabel: "Package Fee",
+  packageFixedNote: "This is the only available package for Rihla'26.",
 
-  tripFee: "Trip Fee",
   paymentMode: "Payment Type",
   modeFull: "Full Payment (Online)",
   modeFullDesc: "I will pay the full amount online now",
@@ -166,9 +153,9 @@ const t = {
 
   termsText:
     "I confirm that all information provided is correct. I agree to follow the organization's rules during the trip, and I understand that the organizers will not be held liable for any unforeseen incidents.",
-  submit: "Submit Registration",
+  submit: "Submit",
   submitting: "Submitting...",
-  cancel: "Cancel",
+  cancel: "Clear form",
   goDashboard: "Go to Dashboard",
   backToHome: "Back to Home",
   successTitle: "Registration Complete!",
@@ -194,7 +181,6 @@ const t = {
   errPassword: "Please enter a password",
   errPasswordShort: "Password must be at least 6 characters",
   errPasswordMatch: "Passwords do not match",
-  errPackage: "Please select a package",
   errPaymentMode: "Please select a payment type",
   errPaymentMethod: "Please select a payment method",
   errTransaction: "Please enter the transaction ID",
@@ -218,18 +204,15 @@ export default function RegisterPage() {
   const [serverError, setServerError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const tripFee = PACKAGES[form.packageType]?.fee || 0;
+  /* Package fee is always fixed */
+  const tripFee = TRIP_FEE;
 
-  useEffect(() => {
-    setForm((p) => ({ ...p, amountPaid: "" }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.packageType]);
-
+  /* Reset amount when payment mode changes */
   useEffect(() => {
     if (form.paymentMode === "full") {
       setForm((p) => ({
         ...p,
-        amountPaid: String(tripFee),
+        amountPaid: String(TRIP_FEE),
         cashReceiver: "",
         slipId: "",
       }));
@@ -248,7 +231,6 @@ export default function RegisterPage() {
         amountPaid: p.amountPaid || "",
       }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.paymentMode]);
 
   const amountNum = parseInt(form.amountPaid || "0", 10) || 0;
@@ -256,15 +238,16 @@ export default function RegisterPage() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-
     setForm((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+  };
 
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
+  const setField = (name, value) => {
+    setForm((p) => ({ ...p, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const validate = () => {
@@ -288,12 +271,8 @@ export default function RegisterPage() {
     if (!form.tshirtSize) err.tshirtSize = t.errTshirt;
     if (!form.address.trim()) err.address = t.errAddress;
 
-    if (!form.emergencyName.trim())
-      err.emergencyName = t.errEmergencyName;
-
-    if (!form.emergencyRelation)
-      err.emergencyRelation = t.errRelation;
-
+    if (!form.emergencyName.trim()) err.emergencyName = t.errEmergencyName;
+    if (!form.emergencyRelation) err.emergencyRelation = t.errRelation;
     if (!form.emergencyPhone.trim())
       err.emergencyPhone = t.errEmergencyPhone;
     else if (!/^01[3-9]\d{8}$/.test(form.emergencyPhone))
@@ -309,8 +288,6 @@ export default function RegisterPage() {
     else if (form.password !== form.confirmPassword)
       err.confirmPassword = t.errPasswordMatch;
 
-    if (!form.packageType) err.packageType = t.errPackage;
-
     if (!form.paymentMode) err.paymentMode = t.errPaymentMode;
 
     if (form.paymentMode === "full" || form.paymentMode === "partial") {
@@ -319,8 +296,7 @@ export default function RegisterPage() {
     }
 
     if (form.paymentMode === "cash") {
-      if (!form.cashReceiver.trim())
-        err.cashReceiver = t.errCashReceiver;
+      if (!form.cashReceiver.trim()) err.cashReceiver = t.errCashReceiver;
       if (!form.slipId.trim()) err.slipId = t.errSlipId;
     }
 
@@ -339,14 +315,13 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setServerError("");
-
     if (!validate()) return;
-
     setSubmitting(true);
 
     try {
       const payload = {
         ...form,
+        packageType: PACKAGE_TYPE,
         amountPaid: amountNum,
         remaining,
         tripFee,
@@ -354,7 +329,6 @@ export default function RegisterPage() {
         paymentStatus:
           remaining === 0 ? "paid" : amountNum > 0 ? "partial" : "unpaid",
       };
-
       delete payload.confirmPassword;
 
       const res = await fetch("/api/register", {
@@ -364,12 +338,8 @@ export default function RegisterPage() {
       });
 
       const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || t.errRegisterFailed);
 
-      if (!res.ok) {
-        throw new Error(data.message || t.errRegisterFailed);
-      }
-
-      // Auto-login
       await signIn("credentials", {
         email: form.email,
         password: form.password,
@@ -385,609 +355,474 @@ export default function RegisterPage() {
     }
   };
 
-  // Success Screen
+  /* ── Success Screen ── */
   if (success) {
     return (
-      <main className="min-h-screen bg-[#F0F9FF] flex items-center justify-center px-4 py-16">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border border-sky-100 p-8 text-center">
-          <div className="w-16 h-16 mx-auto rounded-full bg-sky-100 text-sky-600 flex items-center justify-center mb-4">
-            <CheckCircle2 className="w-9 h-9" />
-          </div>
+      <main className="min-h-screen bg-[#F0EBE3] flex items-start justify-center px-4 py-16">
+        <div className="max-w-xl w-full bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+          <div className="h-2 bg-[#1D423A]" />
+          <div className="p-8">
+            <div className="w-14 h-14 rounded-full bg-[#DFC5A6] text-[#1D423A] flex items-center justify-center mb-5">
+              <CheckCircle2 className="w-8 h-8" />
+            </div>
 
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">
-            {t.successTitle}
-          </h1>
+            <h1 className="text-2xl font-normal text-slate-900">
+              {t.successTitle}
+            </h1>
 
-          <p className="text-slate-600 mb-6 leading-relaxed">
-            {t.successText}
-          </p>
+            <p className="text-sm text-slate-600 mt-3 leading-relaxed">
+              {t.successText}
+            </p>
 
-          <div className="inline-block bg-sky-50 text-sky-700 text-sm px-4 py-2 rounded-lg mb-6 border border-sky-100">
-            {t.statusPending}
-          </div>
+            <div className="mt-6 inline-block bg-[#F0EBE3] text-[#1D423A] text-sm px-4 py-2 rounded border border-[#DFC5A6]">
+              {t.statusPending}
+            </div>
 
-          <div className="flex flex-col gap-2">
-            <Link
-              href="/status"
-              className="px-6 py-3 bg-sky-600 text-white rounded-xl font-semibold hover:bg-sky-700 transition"
-            >
-              {t.goDashboard}
-            </Link>
-
-            <Link
-              href="/"
-              className="px-6 py-3 border border-sky-100 text-slate-700 rounded-xl font-semibold hover:bg-sky-50 transition"
-            >
-              {t.backToHome}
-            </Link>
+            <div className="mt-8 flex flex-col gap-2">
+              <Link
+                href="/status"
+                className="px-6 py-2.5 bg-[#1D423A] text-white rounded-md font-medium text-sm text-center hover:bg-[#246A73] transition"
+              >
+                {t.goDashboard}
+              </Link>
+              <Link
+                href="/"
+                className="px-6 py-2.5 text-[#E07A3E] rounded-md font-medium text-sm text-center hover:bg-[#F0EBE3] transition"
+              >
+                {t.backToHome}
+              </Link>
+            </div>
           </div>
         </div>
       </main>
     );
   }
 
+  /* ── Main Form ── */
   return (
-    <main className="min-h-screen bg-[#F0F9FF] py-10 px-4">
-      <div className="max-w-3xl mx-auto">
+    <main className="min-h-screen bg-[#F0EBE3] py-10 px-4">
+      <div className="max-w-2xl mx-auto">
         <Link
           href="/"
-          className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-sky-600 mb-5 transition"
+          className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-[#1D423A] mb-4 transition"
         >
           <ArrowLeft className="w-4 h-4" />
           {t.backHome}
         </Link>
 
-        <div className="bg-white rounded-2xl border border-sky-100 shadow-sm p-6 md:p-8">
-          {/* Header */}
-          <div className="mb-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-50 border border-sky-100 text-sky-700 text-xs font-semibold mb-4">
-              <MapPin className="w-3.5 h-3.5" />
+        {/* Form Header */}
+        <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden mb-4">
+          <div className="h-2.5 bg-[#1D423A]" />
+          <div className="p-6 md:p-8">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#DFC5A6]/50 text-[#1D423A] text-xs font-medium mb-4">
+              <MapPin className="w-3 h-3" />
               SOROB · Rihla'26
             </div>
 
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
+            <h1 className="text-[28px] md:text-[32px] font-normal text-slate-900 leading-tight">
               {t.pageTitle}
             </h1>
 
-            <p className="text-slate-500 mt-2 text-sm md:text-base">
+            <p className="text-sm text-slate-600 mt-3 leading-relaxed">
               {t.subtitle}
             </p>
 
-            <div className="mt-5 h-1 w-16 rounded-full bg-gradient-to-r from-sky-500 to-blue-400" />
+            <p className="text-sm text-slate-500 mt-4 pt-4 border-t border-slate-100">
+              <span className="text-[#E07A3E]">*</span> Indicates required
+              question
+            </p>
           </div>
+        </div>
 
-          {serverError && (
-            <div className="flex items-start gap-2 bg-red-50 text-red-700 text-sm p-3 rounded-lg mb-6 border border-red-100">
-              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <span>{serverError}</span>
-            </div>
-          )}
+        {serverError && (
+          <div className="flex items-start gap-2 bg-red-50 text-red-700 text-sm p-4 rounded-lg mb-4 border border-red-200">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <span>{serverError}</span>
+          </div>
+        )}
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* 1. Personal Info */}
-            <Section
-              title={t.personalInfo}
-              icon={<User className="w-4 h-4" />}
-            >
-              <Field label={t.fullName} required error={errors.fullName}>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* ── 1. Personal Info ── */}
+          <FormCard title={t.personalInfo} icon={User}>
+            <Field label={t.fullName} required error={errors.fullName}>
+              <input
+                type="text"
+                name="fullName"
+                value={form.fullName}
+                onChange={handleChange}
+                placeholder={t.phFullName}
+                className={inputClass}
+              />
+            </Field>
+
+            <Field label={t.mobile} required error={errors.phone}>
+              <input
+                type="tel"
+                name="phone"
+                value={form.phone}
+                onChange={handleChange}
+                placeholder={t.phPhone}
+                className={inputClass}
+              />
+            </Field>
+
+            <Field label={t.email} required error={errors.email}>
+              <input
+                type="email"
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                placeholder={t.phEmail}
+                className={inputClass}
+              />
+            </Field>
+
+            <div className="grid sm:grid-cols-2 gap-5">
+              <Field label={t.dob} required error={errors.dob}>
                 <input
-                  type="text"
-                  name="fullName"
-                  value={form.fullName}
+                  type="date"
+                  name="dob"
+                  value={form.dob}
                   onChange={handleChange}
-                  placeholder={t.phFullName}
                   className={inputClass}
                 />
               </Field>
 
-              <div className="grid sm:grid-cols-2 gap-4">
-                <Field label={t.mobile} required error={errors.phone}>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={form.phone}
-                    onChange={handleChange}
-                    placeholder={t.phPhone}
-                    className={inputClass}
-                  />
-                </Field>
-
-                <Field label={t.email} required error={errors.email}>
-                  <input
-                    type="email"
-                    name="email"
-                    value={form.email}
-                    onChange={handleChange}
-                    placeholder={t.phEmail}
-                    className={inputClass}
-                  />
-                </Field>
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                <Field label={t.dob} required error={errors.dob}>
-                  <input
-                    type="date"
-                    name="dob"
-                    value={form.dob}
-                    onChange={handleChange}
-                    className={inputClass}
-                  />
-                </Field>
-
-                <Field label={t.gender} required error={errors.gender}>
-                  <select
-                    name="gender"
-                    value={form.gender}
-                    onChange={handleChange}
-                    className={inputClass}
-                  >
-                    <option value="">{t.select}</option>
-                    <option value="male">{t.male}</option>
-                    <option value="female">{t.female}</option>
-                    <option value="other">{t.other}</option>
-                  </select>
-                </Field>
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                <Field label={t.bloodGroup} required error={errors.bloodGroup}>
-                  <select
-                    name="bloodGroup"
-                    value={form.bloodGroup}
-                    onChange={handleChange}
-                    className={inputClass}
-                  >
-                    <option value="">{t.select}</option>
-                    {BLOOD_GROUPS.map((b) => (
-                      <option key={b} value={b}>
-                        {b}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-              </div>
-
-              <Field label={t.address} required error={errors.address}>
-                <textarea
-                  name="address"
-                  value={form.address}
+              <Field label={t.bloodGroup} required error={errors.bloodGroup}>
+                <select
+                  name="bloodGroup"
+                  value={form.bloodGroup}
                   onChange={handleChange}
-                  rows={2}
-                  placeholder={t.phAddress}
-                  className={`${inputClass} resize-none`}
-                />
+                  className={`${inputClass} cursor-pointer`}
+                >
+                  <option value="">{t.select}</option>
+                  {BLOOD_GROUPS.map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
+                </select>
               </Field>
-            </Section>
+            </div>
 
-            {/* 2. Emergency Contact */}
-            <Section
-              title={t.emergencyContact}
-              icon={<HeartPulse className="w-4 h-4" />}
+            <Field label={t.gender} required error={errors.gender}>
+              <RadioGroup
+                name="gender"
+                value={form.gender}
+                options={[
+                  { value: "male", label: t.male },
+                  { value: "female", label: t.female },
+                  { value: "other", label: t.other },
+                ]}
+                onChange={(v) => setField("gender", v)}
+              />
+            </Field>
+
+            <Field label={t.address} required error={errors.address}>
+              <textarea
+                name="address"
+                value={form.address}
+                onChange={handleChange}
+                rows={2}
+                placeholder={t.phAddress}
+                className={`${inputClass} resize-none`}
+              />
+            </Field>
+          </FormCard>
+
+          {/* ── 2. Emergency Contact ── */}
+          <FormCard title={t.emergencyContact} icon={HeartPulse}>
+            <Field label={t.name} required error={errors.emergencyName}>
+              <input
+                type="text"
+                name="emergencyName"
+                value={form.emergencyName}
+                onChange={handleChange}
+                placeholder={t.phEmergencyName}
+                className={inputClass}
+              />
+            </Field>
+
+            <Field
+              label={t.relation}
+              required
+              error={errors.emergencyRelation}
             >
-              <div className="grid sm:grid-cols-3 gap-4">
-                <Field label={t.name} required error={errors.emergencyName}>
+              <select
+                name="emergencyRelation"
+                value={form.emergencyRelation}
+                onChange={handleChange}
+                className={`${inputClass} cursor-pointer`}
+              >
+                <option value="">{t.select}</option>
+                <option value="father">{t.relationFather}</option>
+                <option value="mother">{t.relationMother}</option>
+                <option value="spouse">{t.relationSpouse}</option>
+                <option value="sibling">{t.relationSibling}</option>
+                <option value="guardian">{t.relationGuardian}</option>
+                <option value="relative">{t.relationRelative}</option>
+                <option value="friend">{t.relationFriend}</option>
+                <option value="other">{t.relationOther}</option>
+              </select>
+            </Field>
+
+            <Field label={t.mobile} required error={errors.emergencyPhone}>
+              <input
+                type="tel"
+                name="emergencyPhone"
+                value={form.emergencyPhone}
+                onChange={handleChange}
+                placeholder={t.phPhone}
+                className={inputClass}
+              />
+            </Field>
+          </FormCard>
+
+          {/* ── 3. Previous Tour ── */}
+          <FormCard title={t.previousTourTitle} icon={History}>
+            <Field
+              label={t.previousTourLabel}
+              required
+              error={errors.previousTour}
+            >
+              <RadioGroup
+                name="previousTour"
+                value={form.previousTour}
+                options={[
+                  { value: "yes", label: t.previousTourYes },
+                  { value: "no", label: t.previousTourNo },
+                ]}
+                onChange={(v) => setField("previousTour", v)}
+              />
+            </Field>
+          </FormCard>
+
+          {/* ── 4. Reference ── */}
+          <FormCard title={t.referenceTitle} icon={Share2}>
+            <Field
+              label={t.referenceLabel}
+              required
+              error={errors.reference}
+              hint={t.referenceHint}
+            >
+              <input
+                type="text"
+                name="reference"
+                value={form.reference}
+                onChange={handleChange}
+                placeholder={t.phReference}
+                className={inputClass}
+              />
+            </Field>
+          </FormCard>
+
+          {/* ── 5. T-Shirt Size ── */}
+          <FormCard title={t.tshirtSize} icon={Users}>
+            <Field label={t.size} required error={errors.tshirtSize}>
+              <ChipGroup
+                options={TSHIRT_SIZES}
+                value={form.tshirtSize}
+                onChange={(v) => setField("tshirtSize", v)}
+              />
+            </Field>
+          </FormCard>
+
+          {/* ── 6. Account Security ── */}
+          <FormCard title={t.security} icon={Lock}>
+            <Field label={t.password} required error={errors.password}>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  placeholder={t.phPassword}
+                  autoComplete="new-password"
+                  className={`${inputClass} pr-10`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-[#1D423A] transition"
+                  aria-label="Toggle password"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </Field>
+
+            <Field
+              label={t.confirmPassword}
+              required
+              error={errors.confirmPassword}
+            >
+              <input
+                type={showPassword ? "text" : "password"}
+                name="confirmPassword"
+                value={form.confirmPassword}
+                onChange={handleChange}
+                placeholder={t.phConfirmPassword}
+                autoComplete="new-password"
+                className={inputClass}
+              />
+            </Field>
+          </FormCard>
+
+          {/* ── 7. Package (FIXED) ── */}
+          <FormCard title={t.packageInfo} icon={Package}>
+            <div className="rounded-md border border-[#DFC5A6] bg-[#F0EBE3] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-[#1D423A]">
+                    {t.packageName}
+                  </p>
+                  <p className="text-xs text-slate-600 mt-1">
+                    {t.packageDesc}
+                  </p>
+                </div>
+
+                <div className="text-right">
+                  <p className="text-xs text-slate-500">
+                    {t.packageFeeLabel}
+                  </p>
+                  <p className="text-xl font-bold text-[#1D423A]">
+                    ৳ {TRIP_FEE}
+                  </p>
+                </div>
+              </div>
+
+              <p className="mt-3 pt-3 border-t border-[#DFC5A6] text-xs text-slate-500">
+                {t.packageFixedNote}
+              </p>
+            </div>
+          </FormCard>
+
+          {/* ── 8. Payment ── */}
+          <FormCard title={t.paymentInfo} icon={CreditCard}>
+            <Field label={t.paymentMode} required error={errors.paymentMode}>
+              <RadioGroup
+                name="paymentMode"
+                value={form.paymentMode}
+                options={[
+                  {
+                    value: "full",
+                    label: t.modeFull,
+                    desc: t.modeFullDesc,
+                    icon: CreditCard,
+                  },
+                  {
+                    value: "partial",
+                    label: t.modePartial,
+                    desc: t.modePartialDesc,
+                    icon: Wallet,
+                  },
+                  {
+                    value: "cash",
+                    label: t.modeCash,
+                    desc: t.modeCashDesc,
+                    icon: Banknote,
+                  },
+                ]}
+                onChange={(v) => setField("paymentMode", v)}
+                vertical
+              />
+            </Field>
+
+            {(form.paymentMode === "full" ||
+              form.paymentMode === "partial") && (
+              <>
+                <div className="text-sm text-slate-600 bg-[#F0EBE3] rounded-md p-3 border border-[#DFC5A6]/60 leading-relaxed">
+                  <strong>{t.onlinePayTo}:</strong>
+                  <br />
+                  <strong>bKash:</strong> 017XXXXXXXX &nbsp;|&nbsp;{" "}
+                  <strong>Nagad:</strong> 017XXXXXXXX &nbsp;|&nbsp;{" "}
+                  <strong>Rocket:</strong> 017XXXXXXXX
+                  <br />
+                  {t.paymentNote}
+                </div>
+
+                <Field
+                  label={t.paymentMethod}
+                  required
+                  error={errors.paymentMethod}
+                >
+                  <select
+                    name="paymentMethod"
+                    value={form.paymentMethod}
+                    onChange={handleChange}
+                    className={`${inputClass} cursor-pointer`}
+                  >
+                    <option value="">{t.select}</option>
+                    <option value="bkash">bKash</option>
+                    <option value="nagad">Nagad</option>
+                    <option value="rocket">Rocket</option>
+                  </select>
+                </Field>
+
+                <Field
+                  label={t.transactionId}
+                  required
+                  error={errors.transactionId}
+                >
                   <input
                     type="text"
-                    name="emergencyName"
-                    value={form.emergencyName}
+                    name="transactionId"
+                    value={form.transactionId}
                     onChange={handleChange}
-                    placeholder={t.phEmergencyName}
+                    placeholder={t.phTransactionId}
                     className={inputClass}
                   />
                 </Field>
+              </>
+            )}
+
+            {form.paymentMode === "cash" && (
+              <>
+                <div className="text-sm text-slate-600 bg-[#F0EBE3] rounded-md p-3 border border-[#DFC5A6]/60 leading-relaxed">
+                  {t.cashNote}
+                </div>
 
                 <Field
-                  label={t.relation}
+                  label={t.cashReceiverLabel}
                   required
-                  error={errors.emergencyRelation}
-                >
-                  <select
-                    name="emergencyRelation"
-                    value={form.emergencyRelation}
-                    onChange={handleChange}
-                    className={inputClass}
-                  >
-                    <option value="">{t.select}</option>
-                    <option value="father">{t.relationFather}</option>
-                    <option value="mother">{t.relationMother}</option>
-                    <option value="spouse">{t.relationSpouse}</option>
-                    <option value="sibling">{t.relationSibling}</option>
-                    <option value="guardian">{t.relationGuardian}</option>
-                    <option value="relative">{t.relationRelative}</option>
-                    <option value="friend">{t.relationFriend}</option>
-                    <option value="other">{t.relationOther}</option>
-                  </select>
-                </Field>
-
-                <Field
-                  label={t.mobile}
-                  required
-                  error={errors.emergencyPhone}
+                  error={errors.cashReceiver}
+                  hint={t.cashReceiverHint}
                 >
                   <input
-                    type="tel"
-                    name="emergencyPhone"
-                    value={form.emergencyPhone}
+                    type="text"
+                    name="cashReceiver"
+                    value={form.cashReceiver}
                     onChange={handleChange}
-                    placeholder={t.phPhone}
+                    placeholder={t.phCashReceiver}
                     className={inputClass}
                   />
                 </Field>
-              </div>
-            </Section>
-
-            {/* 3. Previous Tour Experience */}
-            <Section
-              title={t.previousTourTitle}
-              icon={<History className="w-4 h-4" />}
-            >
-              <Field
-                label={t.previousTourLabel}
-                required
-                error={errors.previousTour}
-              >
-                <div className="grid sm:grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setForm((p) => ({ ...p, previousTour: "yes" }))
-                    }
-                    className={`text-left p-3 rounded-xl border transition ${
-                      form.previousTour === "yes"
-                        ? "bg-sky-50 border-sky-500 ring-1 ring-sky-400"
-                        : "bg-white border-sky-100 hover:border-sky-300"
-                    }`}
-                  >
-                    <div
-                      className={`flex items-center gap-2 font-semibold text-sm ${
-                        form.previousTour === "yes"
-                          ? "text-sky-700"
-                          : "text-slate-800"
-                      }`}
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      {t.previousTourYes}
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setForm((p) => ({ ...p, previousTour: "no" }))
-                    }
-                    className={`text-left p-3 rounded-xl border transition ${
-                      form.previousTour === "no"
-                        ? "bg-sky-50 border-sky-500 ring-1 ring-sky-400"
-                        : "bg-white border-sky-100 hover:border-sky-300"
-                    }`}
-                  >
-                    <div
-                      className={`flex items-center gap-2 font-semibold text-sm ${
-                        form.previousTour === "no"
-                          ? "text-sky-700"
-                          : "text-slate-800"
-                      }`}
-                    >
-                      <User className="w-4 h-4" />
-                      {t.previousTourNo}
-                    </div>
-                  </button>
-                </div>
-              </Field>
-            </Section>
-
-            {/* 4. Reference */}
-            <Section
-              title={t.referenceTitle}
-              icon={<Share2 className="w-4 h-4" />}
-            >
-              <Field
-                label={t.referenceLabel}
-                required
-                error={errors.reference}
-              >
-                <input
-                  type="text"
-                  name="reference"
-                  value={form.reference}
-                  onChange={handleChange}
-                  placeholder={t.phReference}
-                  className={inputClass}
-                />
-                <p className="text-xs text-slate-500 mt-1">
-                  {t.referenceHint}
-                </p>
-              </Field>
-            </Section>
-
-            {/* 5. T-Shirt Size */}
-            <Section
-              title={t.tshirtSize}
-              icon={<Users className="w-4 h-4" />}
-            >
-              <Field label={t.size} required error={errors.tshirtSize}>
-                <div className="flex flex-wrap gap-2">
-                  {TSHIRT_SIZES.map((size) => (
-                    <button
-                      key={size}
-                      type="button"
-                      onClick={() =>
-                        setForm((p) => ({ ...p, tshirtSize: size }))
-                      }
-                      className={`px-5 py-2 rounded-lg border font-medium text-sm transition ${
-                        form.tshirtSize === size
-                          ? "bg-sky-600 text-white border-sky-600"
-                          : "bg-white text-slate-700 border-sky-100 hover:border-sky-400 hover:bg-sky-50"
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-              </Field>
-            </Section>
-
-            {/* 6. Account Security */}
-            <Section title={t.security} icon={<Lock className="w-4 h-4" />}>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <Field label={t.password} required error={errors.password}>
-                  <div className="relative">
-                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      name="password"
-                      value={form.password}
-                      onChange={handleChange}
-                      placeholder={t.phPassword}
-                      autoComplete="new-password"
-                      className={`${inputClass} pl-9 pr-10`}
-                    />
-
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((s) => !s)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-sky-600"
-                      aria-label="Toggle password"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
-                    </button>
-                  </div>
-                </Field>
 
                 <Field
-                  label={t.confirmPassword}
+                  label={t.slipIdLabel}
                   required
-                  error={errors.confirmPassword}
+                  error={errors.slipId}
+                  hint={t.slipIdHint}
                 >
-                  <div className="relative">
-                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      name="confirmPassword"
-                      value={form.confirmPassword}
-                      onChange={handleChange}
-                      placeholder={t.phConfirmPassword}
-                      autoComplete="new-password"
-                      className={`${inputClass} pl-9`}
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    name="slipId"
+                    value={form.slipId}
+                    onChange={handleChange}
+                    placeholder={t.phSlipId}
+                    className={inputClass}
+                  />
                 </Field>
-              </div>
-            </Section>
+              </>
+            )}
 
-            {/* 7. Package */}
-            <Section
-              title={t.packageInfo}
-              icon={<Package className="w-4 h-4" />}
-            >
-              <div className="grid sm:grid-cols-3 gap-2">
-                <PackageCard
-                  active={form.packageType === "roundtrip"}
-                  onClick={() =>
-                    setForm((p) => ({ ...p, packageType: "roundtrip" }))
-                  }
-                  icon={<Bus className="w-4 h-4" />}
-                  title={t.pkgRoundTrip}
-                  desc={t.pkgRoundTripDesc}
-                  fee={3500}
-                />
-
-                <PackageCard
-                  active={form.packageType === "oneway"}
-                  onClick={() =>
-                    setForm((p) => ({ ...p, packageType: "oneway" }))
-                  }
-                  icon={<Car className="w-4 h-4" />}
-                  title={t.pkgOneWay}
-                  desc={t.pkgOneWayDesc}
-                  fee={3000}
-                />
-
-                <PackageCard
-                  active={form.packageType === "destination"}
-                  onClick={() =>
-                    setForm((p) => ({ ...p, packageType: "destination" }))
-                  }
-                  icon={<Footprints className="w-4 h-4" />}
-                  title={t.pkgDestination}
-                  desc={t.pkgDestinationDesc}
-                  fee={2500}
-                />
-              </div>
-
-              {errors.packageType && (
-                <p className="text-red-600 text-xs mt-1">
-                  {errors.packageType}
-                </p>
-              )}
-
-              {form.packageType && (
-                <div className="flex items-center justify-between bg-sky-50 border border-sky-100 rounded-lg p-3">
-                  <span className="text-sm text-sky-800 font-medium">
-                    {t.pkgFee}
-                  </span>
-
-                  <span className="text-lg font-bold text-sky-700">
-                    ৳ {tripFee}
-                  </span>
-                </div>
-              )}
-            </Section>
-
-            {/* 8. Payment */}
-            <Section
-              title={t.paymentInfo}
-              icon={<CreditCard className="w-4 h-4" />}
-            >
-              <Field label={t.paymentMode} required error={errors.paymentMode}>
-                <div className="grid sm:grid-cols-3 gap-2">
-                  <PayModeCard
-                    active={form.paymentMode === "full"}
-                    onClick={() =>
-                      setForm((p) => ({ ...p, paymentMode: "full" }))
-                    }
-                    icon={<CreditCard className="w-4 h-4" />}
-                    title={t.modeFull}
-                    desc={t.modeFullDesc}
-                  />
-
-                  <PayModeCard
-                    active={form.paymentMode === "partial"}
-                    onClick={() =>
-                      setForm((p) => ({ ...p, paymentMode: "partial" }))
-                    }
-                    icon={<Wallet className="w-4 h-4" />}
-                    title={t.modePartial}
-                    desc={t.modePartialDesc}
-                  />
-
-                  <PayModeCard
-                    active={form.paymentMode === "cash"}
-                    onClick={() =>
-                      setForm((p) => ({ ...p, paymentMode: "cash" }))
-                    }
-                    icon={<Banknote className="w-4 h-4" />}
-                    title={t.modeCash}
-                    desc={t.modeCashDesc}
-                  />
-                </div>
-              </Field>
-
-              {(form.paymentMode === "full" ||
-                form.paymentMode === "partial") && (
-                <>
-                  <p className="text-sm text-slate-600 bg-sky-50 border border-sky-100 rounded-lg p-3">
-                    <strong>{t.onlinePayTo}:</strong>
-                    <br />
-                    <strong>bKash:</strong> 017XXXXXXXX &nbsp;|&nbsp;
-                    <strong>Nagad:</strong> 017XXXXXXXX &nbsp;|&nbsp;
-                    <strong>Rocket:</strong> 017XXXXXXXX
-                    <br />
-                    {t.paymentNote}
-                  </p>
-
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <Field
-                      label={t.paymentMethod}
-                      required
-                      error={errors.paymentMethod}
-                    >
-                      <select
-                        name="paymentMethod"
-                        value={form.paymentMethod}
-                        onChange={handleChange}
-                        className={inputClass}
-                      >
-                        <option value="">{t.select}</option>
-                        <option value="bkash">bKash</option>
-                        <option value="nagad">Nagad</option>
-                        <option value="rocket">Rocket</option>
-                      </select>
-                    </Field>
-
-                    <Field
-                      label={t.transactionId}
-                      required
-                      error={errors.transactionId}
-                    >
-                      <input
-                        type="text"
-                        name="transactionId"
-                        value={form.transactionId}
-                        onChange={handleChange}
-                        placeholder={t.phTransactionId}
-                        className={inputClass}
-                      />
-                    </Field>
-                  </div>
-                </>
-              )}
-
-              {form.paymentMode === "cash" && (
-                <>
-                  <p className="text-sm text-sky-800 bg-sky-50 border border-sky-100 rounded-lg p-3">
-                    {t.cashNote}
-                  </p>
-
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <Field
-                      label={t.cashReceiverLabel}
-                      required
-                      error={errors.cashReceiver}
-                    >
-                      <div className="relative">
-                        <UserCheck className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-
-                        <input
-                          type="text"
-                          name="cashReceiver"
-                          value={form.cashReceiver}
-                          onChange={handleChange}
-                          placeholder={t.phCashReceiver}
-                          className={`${inputClass} pl-9`}
-                        />
-                      </div>
-
-                      <p className="text-xs text-slate-500 mt-1">
-                        {t.cashReceiverHint}
-                      </p>
-                    </Field>
-
-                    <Field
-                      label={t.slipIdLabel}
-                      required
-                      error={errors.slipId}
-                    >
-                      <div className="relative">
-                        <ReceiptText className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-
-                        <input
-                          type="text"
-                          name="slipId"
-                          value={form.slipId}
-                          onChange={handleChange}
-                          placeholder={t.phSlipId}
-                          className={`${inputClass} pl-9`}
-                        />
-                      </div>
-
-                      <p className="text-xs text-slate-500 mt-1">
-                        {t.slipIdHint}
-                      </p>
-                    </Field>
-                  </div>
-                </>
-              )}
-
-              {(form.paymentMode === "partial" ||
-                form.paymentMode === "cash") && (
+            {(form.paymentMode === "partial" ||
+              form.paymentMode === "cash") && (
+              <>
                 <Field
                   label={t.amountPaid}
                   required
@@ -999,95 +834,95 @@ export default function RegisterPage() {
                     value={form.amountPaid}
                     onChange={handleChange}
                     min="1"
-                    max={tripFee || undefined}
+                    max={TRIP_FEE}
                     placeholder={t.phAmount}
                     className={inputClass}
                   />
                 </Field>
-              )}
 
-              {(form.paymentMode === "partial" ||
-                form.paymentMode === "cash") &&
-                amountNum > 0 &&
-                tripFee > 0 && (
-                  <div className="flex items-center justify-between bg-sky-50 border border-sky-100 rounded-lg p-3">
-                    <span className="text-sm text-sky-800 font-medium">
+                {amountNum > 0 && (
+                  <div className="flex items-center justify-between bg-[#F0EBE3] rounded-md p-3 border border-[#DFC5A6]/60">
+                    <span className="text-sm text-[#1D423A] font-medium">
                       {t.remaining}
                     </span>
-
-                    <span className="text-lg font-bold text-sky-700">
+                    <span className="text-base font-bold text-[#1D423A]">
                       ৳ {remaining}
                     </span>
                   </div>
                 )}
-            </Section>
+              </>
+            )}
+          </FormCard>
 
-            {/* 9. Additional Info */}
-            <Section
-              title={t.additionalInfo}
-              icon={<MapPin className="w-4 h-4" />}
+          {/* ── 9. Additional Info ── */}
+          <FormCard title={t.additionalInfo} icon={MapPin}>
+            <Field label={t.notes}>
+              <textarea
+                name="notes"
+                value={form.notes}
+                onChange={handleChange}
+                rows={3}
+                placeholder={t.phNotes}
+                className={`${inputClass} resize-none`}
+              />
+            </Field>
+          </FormCard>
+
+          {/* ── 10. Terms ── */}
+          <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-6">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                name="agree"
+                checked={form.agree}
+                onChange={handleChange}
+                className="mt-1 w-4 h-4 accent-[#1D423A]"
+              />
+              <span className="text-sm text-slate-700 leading-relaxed">
+                {t.termsText}
+              </span>
+            </label>
+            {errors.agree && (
+              <p className="text-red-600 text-xs mt-2 ml-7">{errors.agree}</p>
+            )}
+          </div>
+
+          {/* ── Submit row ── */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="inline-flex items-center justify-center gap-2 px-8 py-2.5 bg-[#1D423A] text-white rounded-md font-medium text-sm hover:bg-[#246A73] transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <Field label={t.notes}>
-                <textarea
-                  name="notes"
-                  value={form.notes}
-                  onChange={handleChange}
-                  rows={3}
-                  placeholder={t.phNotes}
-                  className={`${inputClass} resize-none`}
-                />
-              </Field>
-            </Section>
-
-            {/* 10. Terms */}
-            <div className="border-t border-sky-100 pt-6">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="agree"
-                  checked={form.agree}
-                  onChange={handleChange}
-                  className="mt-1 w-4 h-4 accent-sky-600"
-                />
-
-                <span className="text-sm text-slate-600 leading-relaxed">
-                  {t.termsText}
-                </span>
-              </label>
-
-              {errors.agree && (
-                <p className="text-red-600 text-sm mt-1">{errors.agree}</p>
+              {submitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {t.submitting}
+                </>
+              ) : (
+                t.submit
               )}
-            </div>
+            </button>
 
-            {/* Submit */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-600 to-blue-600 text-white rounded-xl font-semibold hover:from-sky-700 hover:to-blue-700 transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    {t.submitting}
-                  </>
-                ) : (
-                  <>{t.submit}</>
-                )}
-              </button>
+            <button
+              type="button"
+              onClick={() => {
+                setForm(initialForm);
+                setErrors({});
+              }}
+              className="px-4 py-2 text-sm font-medium text-[#E07A3E] hover:bg-[#F0EBE3] rounded-md transition"
+            >
+              {t.cancel}
+            </button>
+          </div>
 
-              <Link
-                href="/"
-                className="px-6 py-3 border border-sky-100 text-slate-700 rounded-xl font-semibold hover:bg-sky-50 transition text-center"
-              >
-                {t.cancel}
-              </Link>
-            </div>
-          </form>
-        </div>
+          <p className="text-xs text-slate-500 text-center pt-2">
+            Never submit passwords through other forms. This form is secured
+            by SOROB.
+          </p>
+        </form>
 
-        <p className="text-center text-xs text-slate-400 mt-5">
+        <p className="text-center text-xs text-slate-400 mt-6">
           Organized by SOROB · Rihla'26
         </p>
       </div>
@@ -1095,92 +930,117 @@ export default function RegisterPage() {
   );
 }
 
-// ─── Helper Components ───
+/* ─── Google-Form styled helpers ─────────────────────────────── */
 
-function Section({ title, icon, children }) {
+function FormCard({ title, icon: Icon, children }) {
   return (
-    <div>
-      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-sky-100">
-        <span className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
-          {icon}
-        </span>
-
-        <h2 className="font-semibold text-slate-800">{title}</h2>
+    <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
+      <div className="px-6 pt-6 pb-2">
+        <div className="flex items-center gap-2.5">
+          <span className="w-7 h-7 rounded-md bg-[#DFC5A6]/50 text-[#1D423A] flex items-center justify-center">
+            <Icon className="w-4 h-4" />
+          </span>
+          <h2 className="text-[15px] font-medium text-slate-800">{title}</h2>
+        </div>
       </div>
 
-      <div className="space-y-4">{children}</div>
+      <div className="px-6 pb-6 pt-2 space-y-6">{children}</div>
     </div>
   );
 }
 
-function Field({ label, required, error, children }) {
+function Field({ label, required, error, hint, children }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700 mb-1.5">
-        {label} {required && <span className="text-red-500">*</span>}
+      <label className="block text-sm text-slate-800 mb-1">
+        {label} {required && <span className="text-[#E07A3E]">*</span>}
       </label>
-
       {children}
-
-      {error && <p className="text-red-600 text-xs mt-1">{error}</p>}
+      {hint && <p className="text-xs text-slate-500 mt-1.5">{hint}</p>}
+      {error && (
+        <p className="flex items-center gap-1 text-[#c5221f] text-xs mt-1.5">
+          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+          {error}
+        </p>
+      )}
     </div>
   );
 }
 
-function PayModeCard({ active, onClick, icon, title, desc }) {
+function RadioGroup({ name, value, options, onChange, vertical }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`text-left p-3 rounded-xl border transition ${
-        active
-          ? "bg-sky-50 border-sky-500 ring-1 ring-sky-400"
-          : "bg-white border-sky-100 hover:border-sky-300"
-      }`}
-    >
-      <div
-        className={`flex items-center gap-2 mb-1 font-semibold text-sm ${
-          active ? "text-sky-700" : "text-slate-800"
-        }`}
-      >
-        {icon}
-        {title}
-      </div>
+    <div className={vertical ? "space-y-2.5" : "space-y-2.5"}>
+      {options.map((opt) => {
+        const active = value === opt.value;
+        const Icon = opt.icon;
+        return (
+          <label
+            key={opt.value}
+            className="flex items-start gap-3 cursor-pointer group py-1"
+          >
+            <span
+              className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition ${
+                active
+                  ? "border-[#1D423A]"
+                  : "border-slate-400 group-hover:border-slate-600"
+              }`}
+            >
+              <span
+                className={`h-2.5 w-2.5 rounded-full transition-transform ${
+                  active ? "bg-[#1D423A] scale-100" : "scale-0"
+                }`}
+              />
+            </span>
 
-      <p className="text-xs text-slate-500 leading-snug">{desc}</p>
-    </button>
+            <input
+              type="radio"
+              name={name}
+              value={opt.value}
+              checked={active}
+              onChange={() => onChange(opt.value)}
+              className="sr-only"
+            />
+
+            <div className="-mt-0.5">
+              <span
+                className={`text-sm ${
+                  active ? "text-slate-900" : "text-slate-700"
+                } flex items-center gap-1.5`}
+              >
+                {Icon && <Icon className="w-4 h-4 text-[#1D423A]" />}
+                {opt.label}
+              </span>
+              {opt.desc && (
+                <p className="text-xs text-slate-500 mt-0.5">{opt.desc}</p>
+              )}
+            </div>
+          </label>
+        );
+      })}
+    </div>
   );
 }
 
-function PackageCard({ active, onClick, icon, title, desc, fee }) {
+function ChipGroup({ options, value, onChange }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`text-left p-3 rounded-xl border transition ${
-        active
-          ? "bg-sky-50 border-sky-500 ring-1 ring-sky-400"
-          : "bg-white border-sky-100 hover:border-sky-300"
-      }`}
-    >
-      <div
-        className={`flex items-center gap-2 mb-1 font-semibold text-sm ${
-          active ? "text-sky-700" : "text-slate-800"
-        }`}
-      >
-        {icon}
-        {title}
-      </div>
-
-      <p className="text-xs text-slate-500 leading-snug mb-2">{desc}</p>
-
-      <p
-        className={`text-base font-bold ${
-          active ? "text-sky-700" : "text-slate-900"
-        }`}
-      >
-        ৳ {fee}
-      </p>
-    </button>
+    <div className="flex flex-wrap gap-2">
+      {options.map((opt) => {
+        const active = value === opt;
+        return (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => onChange(opt)}
+            className={`px-4 py-1.5 rounded-md border text-sm font-medium transition ${
+              active
+                ? "bg-[#1D423A] text-white border-[#1D423A]"
+                : "bg-white text-slate-700 border-slate-300 hover:border-[#1D423A]"
+            }`}
+          >
+            {opt}
+          </button>
+        );
+      })}
+    </div>
   );
 }

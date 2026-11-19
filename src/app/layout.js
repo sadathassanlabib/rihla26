@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import FloatingCall from "@/components/FloatingCall";
 import NatureSoundscape from "@/components/NatureSoundscape";
 import Footer from "@/components/Footer";
+import FloatingRegisterButton from "@/components/FloatingRegisterButton";
 
 export const metadata = {
   title: "Rihla'26 – SOROB",
@@ -20,9 +21,10 @@ export default function RootLayout({ children }) {
           <Navbar />
 
           {children}
-
           <NatureSoundscape />
           <FloatingCall phone={phone} />
+          <FloatingRegisterButton />
+          
 
           <Footer />
         </Providers>

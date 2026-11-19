@@ -30,31 +30,17 @@ const faqCategories = [
     ],
   },
   {
-    title: "Packages",
+    title: "Trip Fee",
     questions: [
       {
-        question: "What are the available packages?",
-        answer: (
-          <ul className="space-y-2">
-            <li className="flex justify-between gap-4">
-              <span>Dhaka Round Trip</span>
-              <strong>৳3,500</strong>
-            </li>
-            <li className="flex justify-between gap-4">
-              <span>Dhaka One-Way</span>
-              <strong>৳3,000</strong>
-            </li>
-            <li className="flex justify-between gap-4">
-              <span>Join at Destination</span>
-              <strong>৳2,500</strong>
-            </li>
-          </ul>
-        ),
+        question: "What is the registration fee?",
+        answer:
+          "The fixed trip fee is ৳3,500 per participant. The same fee applies to everyone.",
       },
       {
-        question: "What does Join at Destination include?",
+        question: "Can I pay partially?",
         answer:
-          "It excludes transportation to and from Dhaka.",
+          "Yes. You can secure your registration with a minimum initial payment of ৳1,000.",
       },
     ],
   },
@@ -62,16 +48,14 @@ const faqCategories = [
     title: "Payment",
     questions: [
       {
-        question: "Can I pay partially?",
-        answer: "Yes. The minimum initial payment is ৳1,000.",
-      },
-      {
         question: "When is the remaining payment due?",
-        answer: "Within 3 days of the initial payment.",
+        answer:
+          "The remaining payment must be completed within 3 days of the initial payment.",
       },
       {
         question: "Which payment methods are available?",
-        answer: "bKash, Nagad, Rocket and Hand Cash.",
+        answer:
+          "bKash, Nagad, Rocket and Hand Cash.",
       },
       {
         question: "What payment information is required?",
@@ -95,7 +79,8 @@ const faqCategories = [
     questions: [
       {
         question: "Is the payment refundable?",
-        answer: "Yes. A full refund is available.",
+        answer:
+          "Yes. A full refund is available in case of cancellation.",
       },
     ],
   },
@@ -106,55 +91,68 @@ export default function FAQ() {
 
   const toggleQuestion = (categoryIndex, questionIndex) => {
     const key = `${categoryIndex}-${questionIndex}`;
-
-    setActiveItem((current) => (current === key ? null : key));
+    setActiveItem((current) => current === key ? null : key);
   };
 
   return (
     <section
       id="faq"
-      className="relative overflow-hidden bg-[#F3FAFF] px-5 py-20 sm:px-8 lg:py-24"
+      className="bg-[#F7F4ED] px-5 py-16 text-[#1D423A] sm:px-8 sm:py-20"
     >
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-4xl">
+
         {/* Header */}
-        <div className="mx-auto mb-14 max-w-2xl text-center">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#159BC1]/20 bg-white px-4 py-2 text-sm font-semibold text-[#159BC1]">
-            <HelpCircle size={16} />
-            FAQs
+        <div className="mb-10 text-center sm:mb-12">
+          <div className="mb-3 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-[#6BA39E]">
+            <HelpCircle size={15} />
+            Need to know
           </div>
 
-          <h2 className="text-3xl font-bold tracking-tight text-[#073D5B] sm:text-4xl">
-            Frequently Asked Questions
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            Frequently Asked <span className="text-[#E07A3E]">Questions</span>
           </h2>
 
-          <p className="mt-4 text-sm leading-7 text-[#123B56]/70 sm:text-base">
-            Everything you need to know about Rihla&apos;26.
+          <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#71817A]">
+            Find answers to common questions about registration,
+            payments and Rihla&apos;26.
           </p>
+        </div>
+
+        {/* Fixed Trip Fee */}
+        <div className="mb-10 flex flex-col items-center justify-between gap-3 rounded-xl border border-[#DCE7DF] bg-white px-5 py-5 text-center sm:flex-row sm:text-left">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.15em] text-[#6BA39E]">
+              Fixed Trip Fee
+            </p>
+            <h3 className="mt-1 text-lg font-bold text-[#1D423A]">
+              One journey. One fixed fee.
+            </h3>
+            <p className="mt-1 text-xs text-[#82928A]">
+              Applicable to every participant.
+            </p>
+          </div>
+
+          <div className="text-3xl font-black text-[#E07A3E]">
+            ৳3,500
+          </div>
         </div>
 
         {/* FAQ Categories */}
         <div className="space-y-8">
           {faqCategories.map((category, categoryIndex) => (
             <div key={category.title}>
-              <h3 className="mb-3 text-sm font-bold uppercase tracking-[0.15em] text-[#159BC1]">
+              <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#246A73]">
                 {category.title}
               </h3>
 
-              <div className="space-y-3">
+              <div className="divide-y divide-[#E9EDE7] overflow-hidden rounded-xl border border-[#E7E9E2] bg-white">
                 {category.questions.map((item, questionIndex) => {
                   const key = `${categoryIndex}-${questionIndex}`;
                   const isOpen = activeItem === key;
                   const answerId = `faq-answer-${key}`;
 
                   return (
-                    <div
-                      key={item.question}
-                      className={`overflow-hidden rounded-2xl border bg-white transition-all duration-300 ${
-                        isOpen
-                          ? "border-[#159BC1]/40 shadow-md shadow-[#073D5B]/5"
-                          : "border-[#073D5B]/10 hover:border-[#159BC1]/30"
-                      }`}
-                    >
+                    <div key={item.question}>
                       <button
                         type="button"
                         onClick={() =>
@@ -162,20 +160,20 @@ export default function FAQ() {
                         }
                         aria-expanded={isOpen}
                         aria-controls={answerId}
-                        className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left sm:px-6"
+                        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-[#F7F9F5] sm:px-6"
                       >
-                        <span className="text-sm font-semibold leading-6 text-[#073D5B] sm:text-base">
+                        <span className="text-sm font-semibold leading-6 text-[#1D423A]">
                           {item.question}
                         </span>
 
                         <span
-                          className={`flex size-8 shrink-0 items-center justify-center rounded-full transition-all duration-300 ${
+                          className={`flex size-7 shrink-0 items-center justify-center rounded-full transition-all duration-300 ${
                             isOpen
-                              ? "rotate-180 bg-[#073D5B] text-white"
-                              : "bg-[#F3FAFF] text-[#159BC1]"
+                              ? "rotate-180 bg-[#246A73] text-white"
+                              : "bg-[#F1F5F0] text-[#6BA39E]"
                           }`}
                         >
-                          <ChevronDown size={18} />
+                          <ChevronDown size={16} />
                         </span>
                       </button>
 
@@ -189,7 +187,7 @@ export default function FAQ() {
                         }`}
                       >
                         <div className="overflow-hidden">
-                          <div className="border-t border-[#073D5B]/10 px-5 py-5 text-sm leading-7 text-[#123B56]/75 sm:px-6">
+                          <div className="px-5 pb-5 text-sm leading-7 text-[#71817A] sm:px-6">
                             {item.answer}
                           </div>
                         </div>
@@ -202,19 +200,19 @@ export default function FAQ() {
           ))}
         </div>
 
-        {/* Contact CTA */}
-        <div className="mt-14 rounded-3xl bg-[#073D5B] px-6 py-8 text-center sm:px-10">
-          <h3 className="text-xl font-bold text-white">
+        {/* Contact */}
+        <div className="mt-12 rounded-xl bg-[#1D423A] px-6 py-8 text-center sm:py-10">
+          <h3 className="text-xl font-bold text-[#F7F4ED]">
             Still have questions?
           </h3>
 
-          <p className="mt-2 text-sm text-white/70">
-            Contact the SOROB team for assistance.
+          <p className="mt-2 text-sm text-[#B7CEC4]">
+            Our team is here to help you.
           </p>
 
           <a
             href="#contact"
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-[#073D5B] transition hover:bg-[#159BC1] hover:text-white"
+            className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#DFC5A6] px-6 py-3 text-sm font-bold text-[#1D423A] transition hover:bg-[#E07A3E] hover:text-white"
           >
             Contact Us
             <ArrowUpRight size={16} />
@@ -222,9 +220,10 @@ export default function FAQ() {
         </div>
 
         {/* Footer */}
-        <p className="mt-10 text-center text-xs font-semibold tracking-[0.2em] text-[#073D5B]/40">
+        <p className="mt-8 text-center text-[10px] font-semibold tracking-[0.2em] text-[#82928A]">
           SOROB PRESENTS · RIHLA&apos;26
         </p>
+
       </div>
     </section>
   );
